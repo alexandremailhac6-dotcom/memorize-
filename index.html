@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memorize</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --encre: #111111;
+    --gris: #8a8a8a;
+    --ligne: #ececec;
+    --fond-doux: #f7f7f5;
+    --accent: #111111;
+    --vert: #16a34a;
+    --orange: #ea580c;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, "Segoe UI", sans-serif;
+    background: #ffffff;
+    color: var(--encre);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 64px 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 40px; }
+
+  /* En-tête */
+  header { text-align: center; }
+  h1 {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-weight: 400;
+    font-size: 4rem;
+    letter-spacing: -.02em;
+    line-height: 1;
+  }
+  h1 em { font-style: italic; }
+  .sub { color: var(--gris); margin-top: 10px; font-size: .95rem; }
+
+  /* Diagramme en anneau */
+  .jauge { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .anneau { position: relative; width: 240px; height: 240px; }
+  .anneau svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .piste { fill: none; stroke: var(--ligne); stroke-width: 12; }
+  .remplissage {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset .9s cubic-bezier(.22, 1, .36, 1), stroke .4s;
+  }
+  .repere { stroke: var(--gris); stroke-width: 2; }
+  .centre {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .moyenne {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-size: 4.2rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .sur { color: var(--gris); font-size: .9rem; margin-top: 4px; }
+  .legende { color: var(--gris); font-size: .8rem; }
+
+  .message {
+    font-size: .95rem;
+    text-align: center;
+    max-width: 420px;
+    line-height: 1.5;
+  }
+  .message.ok { color: var(--vert); }
+  .message.alerte { color: var(--orange); }
+
+  /* Formulaire */
+  .carte {
+    border: 1px solid var(--ligne);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .titre-section {
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--gris);
+    margin-bottom: 14px;
+  }
+  form { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; }
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--ligne);
+    background: var(--fond-doux);
+    color: var(--encre);
+    font-family: inherit;
+    font-size: .95rem;
+    outline: none;
+    transition: border-color .2s, background .2s;
+  }
+  input::placeholder { color: #b0b0b0; }
+  input:focus { border-color: var(--encre); background: #fff; }
+
+  button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: var(--encre);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: opacity .2s, transform .15s;
+  }
+  button:hover { opacity: .85; }
+  button:active { transform: scale(.98); }
+
+  .erreur { color: var(--orange); font-size: .85rem; margin-top: 10px; min-height: 1.2em; }
+
+  /* Liste */
+  ul { list-style: none; }
+  li {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--ligne);
+    animation: apparition .3s ease;
+  }
+  li:last-child { border-bottom: none; }
+  @keyframes apparition { from { opacity: 0; transform: translateY(-4px); } }
+  .matiere { font-weight: 500; }
+  .note { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .coef { color: var(--gris); font-size: .85rem; }
+  .suppr {
+    background: transparent;
+    color: #c4c4c4;
+    padding: 4px 8px;
+    font-size: 1.1rem;
+  }
+  .suppr:hover { color: var(--orange); opacity: 1; }
+  .vide { display: block; color: var(--gris); text-align: center; padding: 12px; border: none; }
+
+  @media (max-width: 520px) {
+    body { padding-top: 40px; }
+    h1 { font-size: 3.2rem; }
+    form { grid-template-columns: 1fr 1fr; }
+    form input:first-child, form button { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+
+  <header>
+    <h1>Memo<em>rize</em></h1>
+    <p class="sub">Objectif : 14 de moyenne ce semestre.</p>
+  </header>
+
+  <!-- Diagramme qui se remplit jusqu'à 20 -->
+  <section class="jauge">
+    <div class="anneau">
+      <svg viewBox="0 0 120 120">
+        <circle class="piste" cx="60" cy="60" r="52"></circle>
+        <circle class="remplissage" id="remplissage" cx="60" cy="60" r="52"></circle>
+        <!-- Petit trait qui marque l'objectif 14/20 -->
+        <line class="repere" id="repere" x1="104" y1="60" x2="116" y2="60"></line>
+      </svg>
+      <div class="centre">
+        <span class="moyenne" id="moyenne">–</span>
+        <span class="sur">sur 20</span>
+      </div>
+    </div>
+    <span class="legende">Le trait marque ton objectif de 14</span>
+    <p class="message" id="message" hidden></p>
+  </section>
+
+  <!-- Ajouter une note -->
+  <section class="carte">
+    <p class="titre-section">Ajouter une note</p>
+    <form id="formulaire">
+      <input id="champ-matiere" type="text" placeholder="Matière" required>
+      <input id="champ-note" type="number" placeholder="Note /20" min="0" max="20" step="0.01" required>
+      <input id="champ-coef" type="number" placeholder="Coef" min="0.1" step="0.1" required>
+      <button type="submit">Ajouter</button>
+    </form>
+    <p class="erreur" id="erreur"></p>
+  </section>
+
+  <!-- Liste des notes -->
+  <section class="carte">
+    <p class="titre-section">Mes notes</p>
+    <ul id="liste"></ul>
+  </section>
+
+</main>
+
+<script>
+  const OBJECTIF = 14;
+
+  // Messages de motivation, tirés au hasard quand tu es sous 14
+  const MOTIVATION = [
+    "Tu sais ce qu'il te reste à faire : une session de révision aujourd'hui.",
+    "Choisis la matière la plus faible et attaque-la en premier.",
+    "Ce n'est pas une note, c'est un point de départ.",
+    "14, c'est ton objectif, pas une option. Au boulot !"
+  ];
+
+  // --- Préparation du diagramme ---
+  // Le cercle a un rayon de 52, donc une circonférence de 2 × π × 52.
+  // On "cache" une partie du trait pour que seule la part note/20 soit visible.
+  const CIRCONFERENCE = 2 * Math.PI * 52;
+  const remplissage = document.getElementById("remplissage");
+  remplissage.style.strokeDasharray = CIRCONFERENCE;
+  remplissage.style.strokeDashoffset = CIRCONFERENCE;
+
+  // On fait pivoter le trait repère à la position de 14/20 sur le cercle
+  document.getElementById("repere").setAttribute("transform", `rotate(${(OBJECTIF / 20) * 360} 60 60)`);
+
+  // --- Les données : une liste de { matiere, note, coef } ---
+  let notes = charger();
+
+  function charger() {
+    try { return JSON.parse(localStorage.getItem("mes-notes")) || []; }
+    catch { return []; }
+  }
+
+  function sauvegarder() {
+    try { localStorage.setItem("mes-notes", JSON.stringify(notes)); } catch {}
+  }
+
+  // --- Le calcul : moyenne pondérée = somme(note × coef) / somme(coef) ---
+  function calculerMoyenne() {
+    const totalCoef = notes.reduce((somme, n) => somme + n.coef, 0);
+    if (totalCoef === 0) return null;
+    const totalPoints = notes.reduce((somme, n) => somme + n.note * n.coef, 0);
+    return totalPoints / totalCoef;
+  }
+
+  // --- L'affichage : on redessine tout à chaque changement ---
+  function afficher() {
+    const liste = document.getElementById("liste");
+    liste.innerHTML = "";
+
+    if (notes.length === 0) {
+      const vide = document.createElement("li");
+      vide.className = "vide";
+      vide.textContent = "Aucune note pour l'instant.";
+      liste.appendChild(vide);
+    }
+
+    notes.forEach((n, index) => {
+      const ligne = document.createElement("li");
+      ligne.innerHTML = `
+        <span class="matiere"></span>
+        <span class="note">${n.note}/20</span>
+        <span class="coef">coef ${n.coef}</span>
+        <button class="suppr" title="Supprimer">×</button>`;
+      ligne.querySelector(".matiere").textContent = n.matiere;
+      ligne.querySelector(".suppr").onclick = () => {
+        notes.splice(index, 1);
+        sauvegarder();
+        afficher();
+      };
+      liste.appendChild(ligne);
+    });
+
+    const moyenne = calculerMoyenne();
+    const zoneMoyenne = document.getElementById("moyenne");
+    const zoneMessage = document.getElementById("message");
+
+    if (moyenne === null) {
+      zoneMoyenne.textContent = "–";
+      remplissage.style.strokeDashoffset = CIRCONFERENCE;
+      zoneMessage.hidden = true;
+      return;
+    }
+
+    zoneMoyenne.textContent = moyenne.toFixed(2);
+    remplissage.style.strokeDashoffset = CIRCONFERENCE * (1 - moyenne / 20);
+    zoneMessage.hidden = false;
+
+    if (moyenne >= OBJECTIF) {
+      remplissage.style.stroke = "var(--vert)";
+      zoneMessage.className = "message ok";
+      zoneMessage.textContent = "Objectif atteint. Continue comme ça !";
+    } else {
+      remplissage.style.stroke = "var(--accent)";
+      const manque = (OBJECTIF - moyenne).toFixed(2);
+      const phrase = MOTIVATION[Math.floor(Math.random() * MOTIVATION.length)];
+      zoneMessage.className = "message alerte";
+      zoneMessage.textContent = `Il te manque ${manque} points pour atteindre 14. ${phrase}`;
+    }
+  }
+
+  // --- Quand tu cliques sur "Ajouter" ---
+  document.getElementById("formulaire").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const matiere = document.getElementById("champ-matiere").value.trim();
+    const note = parseFloat(document.getElementById("champ-note").value);
+    const coef = parseFloat(document.getElementById("champ-coef").value);
+    const erreur = document.getElementById("erreur");
+
+    if (!matiere || isNaN(note) || note < 0 || note > 20 || isNaN(coef) || coef <= 0) {
+      erreur.textContent = "Vérifie tes champs : note entre 0 et 20, coef supérieur à 0.";
+      return;
+    }
+
+    erreur.textContent = "";
+    notes.push({ matiere, note, coef });
+    sauvegarder();
+    afficher();
+    e.target.reset();
+    document.getElementById("champ-matiere").focus();
+  });
+
+  afficher();
+</script>
+</body>
+</html>
